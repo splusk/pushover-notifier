@@ -71,7 +71,7 @@ const deleteTask = async (taskName: string | undefined): Promise<any> => {
           const taskName = task.name.split("/").pop()
           return (
             <tr key={task.name}>
-              <td>{taskName}</td>
+              <td>{taskName.replaceAll('-', ' ').replace(/\d/g, '')}</td>
               <td>{formatDate(task.scheduleTime.seconds)}</td>
               <td><button onClick={() => deleteTask(taskName)}>Delete</button></td>
             </tr>

@@ -37,7 +37,10 @@ h1 {
 
 th {
   width: 400px;
-  text-align: left;
+}
+
+td {
+  text-align: center;
 }
 
 button {
