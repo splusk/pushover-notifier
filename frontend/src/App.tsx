@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
-const API_KEY = import.meta.env.VITE_API_KEY as string
+// const API_KEY = import.meta.env.VITE_API_KEY as string
+const API_KEY = "PUSHOVER_NOTIFIER_API_KEY";
 const ENDPOINT_URL = import.meta.env.VITE_ENDPOINT_URL as string
 
 type Task = {
@@ -10,10 +11,10 @@ type Task = {
   };
 };
 
-const fetchTasks = async (): Promise<Task[]> => {
+const fetchTasks = async (apiKey: string): Promise<Task[]> => {
   const response = await fetch(`${ENDPOINT_URL}/tasks`, {
     headers: {
-      "Authorization": `Bearer ${API_KEY}`,
+      "Authorization": `Bearer ${apiKey}`,
   }});
   return response.json();
 };
@@ -35,10 +36,29 @@ const formatDate = (seconds: string): string => {
 };
 
 const App = () => {
+  const [apiKey, setApiKey] = useState<string|null>();
   const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
-    fetchTasks().then(setTasks);
+    if (apiKey) {
+      fetchTasks(apiKey).then(response => {
+        if (Array.isArray(response)) {
+          setTasks(response)
+        } else {
+          localStorage.removeItem(API_KEY);
+          setApiKey(null);
+        }
+    });
+    }
+  }, [apiKey]);
+
+  useEffect(() => {
+    let storageValue = localStorage.getItem(API_KEY);
+    const apiKey = storageValue ? storageValue : prompt("Enter your API key:");
+    if (apiKey) {
+      localStorage.setItem(API_KEY, apiKey);
+      setApiKey(apiKey);
+    }
   }, []);
 
 
@@ -50,36 +70,35 @@ const deleteTask = async (taskName: string | undefined): Promise<any> => {
         "Authorization": `Bearer ${API_KEY}`,
     }});
     const result = await response.json();
-    console.log(result);
-    if (result) {
-      fetchTasks().then(setTasks);
+    if (result && apiKey) {
+      fetchTasks(apiKey).then(setTasks);
     }
   }
 };
 
-  return (
-    <table>
-      <thead>
-        <tr>
-          <th>Task Name</th>
-          <th>Scheduled For</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {tasks.map((task) => {
-          const taskName = task.name.split("/").pop()
-          return (
-            <tr key={task.name}>
-              <td>{taskName.replaceAll('-', ' ').replace(/\d/g, '')}</td>
-              <td>{formatDate(task.scheduleTime.seconds)}</td>
-              <td><button onClick={() => deleteTask(taskName)}>Delete</button></td>
-            </tr>
-          )}
-        )}
-      </tbody>
-    </table>
-  );
+ return (
+   <table>
+     <thead>
+       <tr>
+         <th>Task Name</th>
+         <th>Scheduled For</th>
+         <th>Action</th>
+       </tr>
+     </thead>
+     <tbody>
+       {tasks.map((task) => {
+         const taskName = task.name.split("/").pop() || 'task-name-unknown'
+         return (
+           <tr key={task.name}>
+             <td>{taskName.replaceAll('-', ' ').replace(/\d/g, '')}</td>
+             <td>{formatDate(task.scheduleTime.seconds)}</td>
+             <td><button onClick={() => deleteTask(taskName)}>Delete</button></td>
+           </tr>
+         )}
+       )}
+     </tbody>
+   </table>
+ );
 };
 
 export default App;
