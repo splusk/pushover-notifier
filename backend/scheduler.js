@@ -13,29 +13,31 @@ export const scheduleNotification = async (value, delaySeconds) => {
   const parent = client.queuePath(project, region, queue);
   const payload = JSON.stringify(value);
   const dueTimeInSeconds = Math.round(Date.now() / 1000) + delaySeconds;
+  const taskName = `${value.message.replaceAll(
+    ' ',
+    '-',
+  )}-${delaySeconds}`.toLowerCase();
+  const taskPath = `${parent}/tasks/${taskName}`;
 
-  const request = {
-    parent,
-    task: {
-      name: `${value.message.replace(' ', '-')}-${delaySeconds}`,
-      httpRequest: {
-        httpMethod: 'POST',
-        url: serviceUrl,
-        body: Buffer.from(payload).toString('base64'),
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-        },
+  const task = {
+    name: taskPath,
+    httpRequest: {
+      httpMethod: 'POST',
+      url: serviceUrl,
+      body: Buffer.from(payload).toString('base64'),
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
       },
-      scheduleTime: { seconds: dueTimeInSeconds },
     },
+    scheduleTime: { seconds: dueTimeInSeconds },
   };
 
   console.log(
     `Tasks ${value.message}, is being scheduled in ${dueTimeInSeconds} seconds from now`,
   );
-  const [task] = await client.createTask(request);
-  return task.name;
+  const [createdTask] = await client.createTask({ parent, task });
+  return createdTask;
 };
 
 export const getAllTasks = async () => {

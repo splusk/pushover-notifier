@@ -49,13 +49,20 @@ app.post('/schedule', authenticate, async (req, res) => {
     return res.status(400).json({ error: 'Due date must be in the future' });
   }
 
-  const taskName = await scheduleNotification(
+  const response = await scheduleNotification(
     { message, htmlMessage },
     delaySeconds,
   );
+  if (response && response.name && response.scheduleTime) {
+    return res.status(200).json({
+      message: 'Task scheduled successfully',
+      taskName: response.name,
+      scheduledTime: response.scheduleTime,
+    });
+  }
   return res
-    .status(200)
-    .json({ message: 'Task scheduled successfully', taskName });
+    .status(500)
+    .send({ message: 'Failed to create task', error: response.details });
 });
 
 app.post('/send-notification', authenticate, async (req, res) => {
