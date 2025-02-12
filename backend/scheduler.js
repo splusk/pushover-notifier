@@ -1,4 +1,5 @@
 import { CloudTasksClient } from '@google-cloud/tasks';
+import { logToCloud } from './logger.js';
 import 'dotenv/config';
 
 const client = new CloudTasksClient();
@@ -13,10 +14,13 @@ export const scheduleNotification = async (value, delaySeconds) => {
   const parent = client.queuePath(project, region, queue);
   const payload = JSON.stringify(value);
   const dueTimeInSeconds = Math.round(Date.now() / 1000) + delaySeconds;
-  const taskName = `${value.message.replaceAll(
-    ' ',
-    '-',
-  )}-${delaySeconds}`.toLowerCase();
+  const taskName =
+    value.message
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .toLowerCase() +
+    '-' +
+    delaySeconds;
   const taskPath = `${parent}/tasks/${taskName}`;
 
   const task = {
@@ -33,8 +37,9 @@ export const scheduleNotification = async (value, delaySeconds) => {
     scheduleTime: { seconds: dueTimeInSeconds },
   };
 
-  console.log(
+  logToCloud(
     `Tasks ${value.message}, is being scheduled in ${dueTimeInSeconds} seconds from now`,
+    'INFO',
   );
   const [createdTask] = await client.createTask({ parent, task });
   return createdTask;
@@ -47,7 +52,7 @@ export const getAllTasks = async () => {
     const [tasks] = await client.listTasks({ parent });
     return tasks;
   } catch (error) {
-    console.error('Error retrieving tasks:', error);
+    logToCloud(`Error retrieving all tasks: ${error}`, 'ERROR');
   }
 };
 
@@ -58,7 +63,7 @@ export const getTask = async (taskName) => {
     const [task] = await client.getTask({ name: taskPath });
     return task;
   } catch (error) {
-    console.error('Error retrieving task:', error);
+    logToCloud(`Error retrieving task: ${error}`, 'ERROR');
     return null;
   }
 };
@@ -70,6 +75,6 @@ export const deleteTask = async (taskName) => {
     await client.deleteTask({ name: taskPath });
     return { message: `Task ${taskName} deleted` };
   } catch (error) {
-    console.error('Error deleting task:', error);
+    logToCloud(`Error deleting task: ${error}`, 'ERROR');
   }
 };

@@ -10,6 +10,7 @@ import {
   scheduleNotification,
 } from './scheduler.js';
 import 'dotenv/config';
+import { logToCloud } from './logger.js';
 
 const apiKey = process.env.API_KEY || '';
 const pushoverConfig = {
@@ -85,7 +86,7 @@ app.get('/tasks', authenticate, async (_, res) => {
     const tasks = await getAllTasks();
     return res.status(200).json(tasks);
   } catch (error) {
-    console.error('Failed to get task:', error);
+    logToCloud(`Failed to get all tasks: ${error}`, 'ERROR');
     return res.status(500).send('Failed to get all task');
   }
 });
@@ -102,7 +103,7 @@ app.get('/tasks/:id', authenticate, async (req, res) => {
     const task = await getTask(id);
     return res.status(200).json(task);
   } catch (error) {
-    console.error('Failed to get task:', error);
+    logToCloud(`Failed to get task: ${error}`, 'ERROR');
     return res.status(500).send('Failed to get task');
   }
 });
@@ -119,7 +120,7 @@ app.delete('/tasks/:id', authenticate, async (req, res) => {
     const response = await deleteTask(id);
     return res.status(200).json(response);
   } catch (error) {
-    console.error('Failed to delete key:', error);
+    logToCloud(`Failed to delete task: ${error}`, 'ERROR');
     return res.status(500).send('Failed to delete key');
   }
 });
@@ -136,15 +137,15 @@ const sendPushoverNotification = async (data) => {
         html: data.htmlMessage ? 1 : 0,
       },
     );
-    console.log('Pushover notification sent:', response.data);
+    logToCloud('Pushover notification sent', 'INFO');
     return response.data;
   } catch (err) {
-    console.error('Failed to send Pushover notification:', err);
+    logToCloud(`Failed to send Pushover notification: ${err}`, 'ERROR');
     return err;
   }
 };
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
-  console.log(`Server running on port ${PORT}`);
+  logToCloud(`Server running on port ${PORT}`, 'INFO');
 });
