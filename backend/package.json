@@ -1,0 +1,20 @@
+{
+  "name": "Pushover-Notifier",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.735.0",
+    "@google-cloud/tasks": "^5.5.2",
+    "axios": "^1.7.9",
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "events": "^3.3.0",
+    "express": "^4.21.2",
+    "luxon": "^3.5.0"
+  },
+  "scripts": {
+    "start": "node server.js"
+  }
+}
