@@ -1,4 +1,6 @@
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import axios from 'axios';
@@ -21,7 +23,6 @@ const pushoverConfig = {
 const app = express();
 app.use(bodyParser.json());
 app.use(cors());
-app.use(express.static(path.join(__dirname, "public")));
 
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -31,15 +32,11 @@ const authenticate = (req, res, next) => {
   next();
 };
 
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
-app.get('/_health', (_, res) => {
+app.get('/api/_health', (_, res) => {
   res.status(200).send('OK');
 });
 
-app.post('/schedule', authenticate, async (req, res) => {
+app.post('/api/schedule', authenticate, async (req, res) => {
   const { message, htmlMessage, dueDate } = req.body;
   if (!message || !dueDate) {
     return res.status(400).json({ error: 'message and dueDate are required' });
@@ -71,7 +68,7 @@ app.post('/schedule', authenticate, async (req, res) => {
     .send({ message: 'Failed to create task', error: response.details });
 });
 
-app.post('/send-notification', authenticate, async (req, res) => {
+app.post('/api/send-notification', authenticate, async (req, res) => {
   try {
     const taskData = req.body;
 
@@ -86,7 +83,7 @@ app.post('/send-notification', authenticate, async (req, res) => {
   }
 });
 
-app.get('/tasks', authenticate, async (_, res) => {
+app.get('/api/tasks', authenticate, async (_, res) => {
   try {
     const tasks = await getAllTasks();
     return res.status(200).json(tasks);
@@ -96,7 +93,7 @@ app.get('/tasks', authenticate, async (_, res) => {
   }
 });
 
-app.get('/tasks/:id', authenticate, async (req, res) => {
+app.get('/api/tasks/:id', authenticate, async (req, res) => {
   const { id } = req.params;
 
   if (!id) {
@@ -113,7 +110,7 @@ app.get('/tasks/:id', authenticate, async (req, res) => {
   }
 });
 
-app.delete('/tasks/:id', authenticate, async (req, res) => {
+app.delete('/api/tasks/:id', authenticate, async (req, res) => {
   const { id } = req.params;
 
   if (!id) {
@@ -149,6 +146,14 @@ const sendPushoverNotification = async (data) => {
     return err;
   }
 };
+
+// Server React App
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {

@@ -8,7 +8,7 @@ const project = process.env.PROJECT_ID;
 const account = process.env.PROJECT_NUMBER;
 const region = process.env.PROJECT_REGION;
 const queue = 'task-reminders';
-const serviceUrl = `https://${project}-${account}.${region}.run.app/send-notification`;
+const serviceUrl = `https://${project}-${account}.${region}.run.app/api/send-notification`;
 
 export const scheduleNotification = async (value, delaySeconds) => {
   const parent = client.queuePath(project, region, queue);

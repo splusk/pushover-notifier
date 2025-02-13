@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 // const API_KEY = import.meta.env.VITE_API_KEY as string
 const LOCAL_STORAGE_API_KEY = "PUSHOVER_NOTIFIER_API_KEY";
-const ENDPOINT_URL = import.meta.env.VITE_ENDPOINT_URL as string
+const ENDPOINT_URL = import.meta.env.VITE_ENDPOINT_URL as string || 'api';
 
 type Task = {
   name: string;
@@ -15,35 +15,13 @@ const App = () => {
   const [apiKey, setApiKey] = useState<string|null>();
   const [tasks, setTasks] = useState<Task[]>([]);
 
-  useEffect(() => {
-    if (apiKey) {
-      fetchTasks().then(response => {
-        if (Array.isArray(response)) {
-          setTasks(response)
-        } else {
-          localStorage.removeItem(LOCAL_STORAGE_API_KEY);
-          setApiKey(null);
-        }
-    });
-    }
-  }, [apiKey]);
-
-  useEffect(() => {
-    let storageValue = localStorage.getItem(LOCAL_STORAGE_API_KEY);
-    const apiKey = storageValue ? storageValue : prompt("Enter your API key:");
-    if (apiKey) {
-      localStorage.setItem(LOCAL_STORAGE_API_KEY, apiKey);
-      setApiKey(apiKey);
-    }
-  }, []);
-
-  const fetchTasks = async (): Promise<Task[]> => {
+ const fetchTasks = useCallback(async (): Promise<Task[]> => {
     const response = await fetch(`${ENDPOINT_URL}/tasks`, {
       headers: {
         "Authorization": `Bearer ${apiKey}`,
     }});
     return response.json();
-  };
+  }, [apiKey]);
 
   const deleteTask = async (taskName: string | undefined): Promise<any> => {
     if (taskName) {
@@ -58,6 +36,28 @@ const App = () => {
       }
     }
   };
+
+  useEffect(() => {
+    if (apiKey) {
+      fetchTasks().then(response => {
+        if (Array.isArray(response)) {
+          setTasks(response)
+        } else {
+          localStorage.removeItem(LOCAL_STORAGE_API_KEY);
+          setApiKey(null);
+        }
+    });
+    }
+  }, [apiKey, fetchTasks]);
+
+  useEffect(() => {
+    const storageValue = localStorage.getItem(LOCAL_STORAGE_API_KEY);
+    const apiKey = storageValue ? storageValue : prompt("Enter your API key:");
+    if (apiKey) {
+      localStorage.setItem(LOCAL_STORAGE_API_KEY, apiKey);
+      setApiKey(apiKey);
+    }
+  }, []);
 
   return (
     <table>
